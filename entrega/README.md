@@ -43,7 +43,6 @@ La vista compartida permite revisar los leads procesados, el estado, la urgencia
 - Anexar capturas reales de las pruebas y del dashboard.
 - Exportar el JSON definitivo desde n8n y sustituir este respaldo técnico.
 - Generar el PDF final cuando la evidencia esté cerrada.
-- Publicar el enlace del repositorio GitHub final.
 
 ## Modelo
 
