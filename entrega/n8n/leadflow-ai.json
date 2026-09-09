@@ -1,0 +1,35 @@
+{
+  "name": "LeadFlow AI - AutomatizaPro",
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "nodes": [
+    {"id":"1","name":"Trigger Gmail - LEAD_NUEVO","type":"n8n-nodes-base.gmailTrigger","typeVersion":1,"position":[0,0],"parameters":{"pollTimes":{"item":[{"mode":"everyMinute"}]},"filters":{"labelIds":["LEAD_NUEVO"]},"options":{"simplify":true}},"credentials":{"gmailOAuth2":{"id":"PLACEHOLDER_GMAIL_CREDENTIAL","name":"Gmail account"}}},
+    {"id":"2","name":"Validar Message ID","type":"n8n-nodes-base.if","typeVersion":2,"position":[220,0],"parameters":{"conditions":{"string":[{"value1":"={{$json.id}}","operation":"isNotEmpty"}]} }},
+    {"id":"3","name":"Airtable - Evitar duplicado","type":"n8n-nodes-base.airtable","typeVersion":2,"position":[440,0],"parameters":{"operation":"search","base":"app6PrhsqGVfwPsZG","table":"tblKNdSztcL3x1Yyn","filterByFormula":"={Message ID}='{{$json.id}}'","options":{"alwaysOutputData":true}},"credentials":{"airtableTokenApi":{"id":"PLACEHOLDER_AIRTABLE_CREDENTIAL","name":"Airtable Personal Access Token account"}}},
+    {"id":"4","name":"Filtro - Mensaje nuevo","type":"n8n-nodes-base.if","typeVersion":2,"position":[660,0],"parameters":{"conditions":{"number":[{"value1":"={{$items().length}}","operation":"equal","value2":0}]}}},
+    {"id":"5","name":"Gmail - Leer lead","type":"n8n-nodes-base.gmail","typeVersion":2,"position":[880,0],"parameters":{"resource":"message","operation":"get","messageId":"={{$('Trigger Gmail - LEAD_NUEVO').item.json.id}}","simple":true},"credentials":{"gmailOAuth2":{"id":"PLACEHOLDER_GMAIL_CREDENTIAL","name":"Gmail account"}}},
+    {"id":"6","name":"Validar datos mínimos","type":"n8n-nodes-base.if","typeVersion":2,"position":[1100,0],"parameters":{"conditions":{"number":[{"value1":"={{$json.snippet ? $json.snippet.trim().length : 0}}","operation":"larger","value2":20}],"options":{"convertTypes":true}}}},
+    {"id":"7","name":"Groq Free - Clasificar y redactar","type":"n8n-nodes-base.openAi","typeVersion":1,"position":[1320,0],"parameters":{"resource":"chat","operation":"complete","modelId":"openai/gpt-oss-20b","messages":{"values":[{"role":"user","content":"=Clasifica este lead. Devuelve SOLO el JSON final, sin explicar ni razonar, sin markdown, con: segment (VIP|Caliente|Tibio|Frio), score (0-100), urgency (Baja|Media|Alta), missing_fields (array), draft_reply (maximo 180 caracteres), confidence (0-1). Usa solo este mensaje: {{$json.snippet}}"}]},"options":{"maxTokens":700,"temperature":0.1}},"credentials":{"openAiApi":{"id":"PLACEHOLDER_GROQ_COMPAT_CREDENTIAL","name":"OpenAI account"}}},
+    {"id":"8","name":"Airtable - Guardar clasificación","type":"n8n-nodes-base.airtable","typeVersion":2,"position":[1540,0],"parameters":{"operation":"create","base":"app6PrhsqGVfwPsZG","table":"tblTEWuugQX5kpNwE","columns":{"mappingMode":"defineBelow","value":{"Estado":"Procesado por IA","Lead ID":"={{'lead_'+$('Gmail - Leer lead').item.json.id}}","Email":"={{$json.headers.from}}","Segmento":"={{$('Groq Free - Clasificar y redactar').item.json.message.content.split('\"segment\":\"')[1].split('\"')[0]}}","Gmail Thread ID":"={{$('Gmail - Leer lead').item.json.threadId}}"}}},"credentials":{"airtableTokenApi":{"id":"PLACEHOLDER_AIRTABLE_CREDENTIAL","name":"Airtable Personal Access Token account"}}},
+    {"id":"9","name":"Telegram - Solicitar aprobación","type":"n8n-nodes-base.telegram","typeVersion":1,"position":[1760,0],"parameters":{"chatId":"6539729613","text":"={{'Lead pendiente de aprobacion\nMensaje:\n'+$('Gmail - Leer lead').item.json.snippet+'\n\nAPROBAR: '+$execution.resumeUrl+'&decision=APROBAR\nRECHAZAR: '+$execution.resumeUrl+'&decision=RECHAZAR'}}","additionalFields":{"disableWebPagePreview":true}},"credentials":{"telegramApi":{"id":"PLACEHOLDER_TELEGRAM_CREDENTIAL","name":"Telegram account"}}},
+    {"id":"10","name":"HITL - Esperar decisión","type":"n8n-nodes-base.wait","typeVersion":1,"position":[1980,0],"parameters":{"amount":1,"unit":"days"}},
+    {"id":"11","name":"Router - Aprobado","type":"n8n-nodes-base.if","typeVersion":2,"position":[2200,0],"parameters":{"conditions":{"string":[{"value1":"={{$json.query.decision}}","operation":"isEqual","value2":"APROBAR"}]}}},
+    {"id":"12","name":"Gmail - Responder en hilo","type":"n8n-nodes-base.gmail","typeVersion":2,"position":[2420,0],"parameters":{"resource":"message","operation":"reply","messageId":"={{$('Gmail - Leer lead').item.json.id}}","message":"={{$('Groq Free - Clasificar y redactar').item.json.message.content}}","options":{"appendAttribution":false}},"credentials":{"gmailOAuth2":{"id":"PLACEHOLDER_GMAIL_CREDENTIAL","name":"Gmail account"}}},
+    {"id":"14","name":"Error Handler - Registrar","type":"n8n-nodes-base.airtable","typeVersion":2,"position":[1320,300],"parameters":{"operation":"create","base":"app6PrhsqGVfwPsZG","table":"tblbJBZdGILEglTDX","columns":{"mappingMode":"defineBelow","value":{"Nodo":"Validación o API","Mensaje":"={{$json.error?.message || 'Datos incompletos'}}","Estado":"Nuevo"}}},"credentials":{"airtableTokenApi":{"id":"PLACEHOLDER_AIRTABLE_CREDENTIAL","name":"Airtable Personal Access Token account"}}}
+  ],
+  "connections": {
+    "Trigger Gmail - LEAD_NUEVO":{"main":[[{"node":"Validar Message ID","type":"main","index":0}]]},
+    "Validar Message ID":{"main":[[{"node":"Airtable - Evitar duplicado","type":"main","index":0}],[{"node":"Error Handler - Registrar","type":"main","index":0}]]},
+    "Airtable - Evitar duplicado":{"main":[[{"node":"Filtro - Mensaje nuevo","type":"main","index":0}]]},
+    "Filtro - Mensaje nuevo":{"main":[[{"node":"Gmail - Leer lead","type":"main","index":0}]]},
+    "Gmail - Leer lead":{"main":[[{"node":"Validar datos mínimos","type":"main","index":0}]]},
+    "Validar datos mínimos":{"main":[[{"node":"Groq Free - Clasificar y redactar","type":"main","index":0}],[{"node":"Error Handler - Registrar","type":"main","index":0}]]},
+    "Groq Free - Clasificar y redactar":{"main":[[{"node":"Airtable - Guardar clasificación","type":"main","index":0}]]},
+    "Airtable - Guardar clasificación":{"main":[[{"node":"Telegram - Solicitar aprobación","type":"main","index":0}]]},
+    "Telegram - Solicitar aprobación":{"main":[[{"node":"HITL - Esperar decisión","type":"main","index":0}]]},
+    "HITL - Esperar decisión":{"main":[[{"node":"Router - Aprobado","type":"main","index":0}]]},
+    "Router - Aprobado":{"main":[[{"node":"Gmail - Responder en hilo","type":"main","index":0}],[]]}
+  },
+  "pinData": {},
+  "versionId": "leadflow-ai-v1"
+}
