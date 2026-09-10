@@ -27,7 +27,7 @@ Ecosistema autónomo de calificación y seguimiento de leads para AutomatizaPro.
 
 ## Evidencias
 
-Las capturas reales de n8n, Airtable, Gmail, Telegram y las pruebas deben guardarse en la carpeta `capturas/` antes de la entrega.
+Las capturas reales están disponibles en la carpeta [capturas](capturas/): flujo n8n, configuración Groq, HITL en Telegram, estructura Airtable, corrección del campo Name, ejecución exitosa y camino de error.
 
 ## Estado de implementación
 
@@ -35,10 +35,11 @@ Las capturas reales de n8n, Airtable, Gmail, Telegram y las pruebas deben guarda
 - La prueba con datos incompletos produce `False Branch` y no llama a Groq.
 - La prueba completa guarda la clasificación, solicita aprobación, espera el HITL y responde en el hilo de Gmail.
 - El blueprint publicado no contiene claves ni tokens.
+- El repositorio contiene las evidencias técnicas y el export definitivo.
 
 ## Repositorio
 
-[ Abrir repositorio GitHub ](https://github.com/paulomolaguero/leadflow-ai-entrega-final)
+[Abrir repositorio GitHub](https://github.com/paulomolaguero/leadflow-ai-entrega-final)
 
 ## Modelo
 
