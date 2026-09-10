@@ -1,0 +1,743 @@
+{
+  "name": "LeadFlow AI - AutomatizaPro",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "labelIds": [
+            "Label_5683773356244784593"
+          ]
+        }
+      },
+      "id": "f87e7f87-fdbc-453b-8c07-32810c156f8c",
+      "name": "Trigger Gmail - LEAD_NUEVO",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NtgSOD5wbSf8WxBb",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.id}}",
+              "operation": "isNotEmpty"
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "id": "5e7b12ec-ec77-4a69-9bd5-3be0c46f2704",
+      "name": "Validar Message ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "app6PrhsqGVfwPsZG"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblKNdSztcL3x1Yyn",
+          "mode": "id"
+        },
+        "filterByFormula": "={Name}='{{$json.id}}'",
+        "options": {}
+      },
+      "id": "5b7e40f0-26a1-43c5-b08f-e3c4e3b3774e",
+      "name": "Airtable - Evitar duplicado",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "pJua5X4aNBdLLGXz",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$items().length}}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "id": "095da6e1-13f4-44fd-a334-95e3e16858fe",
+      "name": "Filtro - Mensaje nuevo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{$('Trigger Gmail - LEAD_NUEVO').item.json.id}}"
+      },
+      "id": "c63ddc1b-a888-44bb-bea2-abec3b5ba7f5",
+      "name": "Gmail - Leer lead",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "webhookId": "49cdd6d7-ac22-41b7-aa75-5cdedecf90fb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NtgSOD5wbSf8WxBb",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "10ba7fe4-576d-4d07-885f-7485894a3704",
+              "leftValue": "={{$json.snippet ? $json.snippet.trim().length : 0}}",
+              "rightValue": 20,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "looseTypeValidation": true
+        }
+      },
+      "id": "33c277ef-7e15-4748-9b86-a9216439342e",
+      "name": "Validar datos mínimos",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "=openai/gpt-oss-20b",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=Clasifica este lead. Devuelve SOLO el JSON final, sin explicar ni razonar, sin markdown, con: segment (VIP|Caliente|Tibio|Frio), score (0-100), urgency (Baja|Media|Alta), missing_fields (array), draft_reply (maximo 180 caracteres), confidence (0-1). Usa solo este mensaje: {{$json.snippet}}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 700,
+          "temperature": 0.1
+        },
+        "requestOptions": {}
+      },
+      "id": "75684ee8-1093-4f38-b749-f03c9bb076b0",
+      "name": "Groq Free - Clasificar y redactar",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "JPREu6X1GB7aPwWb",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "app6PrhsqGVfwPsZG"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblTEWuugQX5kpNwE"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead ID": "={{'lead_'+$('Gmail - Leer lead').item.json.id}}",
+            "Email": "={{$json.headers.from}}",
+            "Segmento": "={{$('Groq Free - Clasificar y redactar').item.json.message.content.split('\\\"segment\\\":\\\"')[1].split('\\\"')[0]}}",
+            "Score": "={{$('Groq Free - Clasificar y redactar').item.json.message.content.split('\\\"score\\\":')[1].split(',')[0]}}",
+            "Urgencia": "={{$('Groq Free - Clasificar y redactar').item.json.message.content.split('\\\"urgency\\\":\\\"')[1].split('\\\"')[0]}}",
+            "Estado": "Procesado por IA",
+            "Gmail Thread ID": "={{$('Gmail - Leer lead').item.json.threadId}}",
+            "Name": "=Lead {{$('Gmail - Leer lead').item.json.id}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Todo",
+                  "value": "Todo"
+                },
+                {
+                  "name": "In progress",
+                  "value": "In progress"
+                },
+                {
+                  "name": "Done",
+                  "value": "Done"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Attachments",
+              "displayName": "Attachments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Attachment Summary",
+              "displayName": "Attachment Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Lead ID",
+              "displayName": "Lead ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Necesidad",
+              "displayName": "Necesidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Segmento",
+              "displayName": "Segmento",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Urgencia",
+              "displayName": "Urgencia",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Gmail Thread ID",
+              "displayName": "Gmail Thread ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Última interacción",
+              "displayName": "Última interacción",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "280989ea-9dea-4934-b4e5-04a6399bc668",
+      "name": "Airtable - Guardar clasificación",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        0
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "pJua5X4aNBdLLGXz",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6539729613",
+        "text": "={{'Lead pendiente de aprobacion\\nMensaje:\\n'+$('Gmail - Leer lead').item.json.snippet+'\\n\\nAPROBAR: '+$execution.resumeUrl+'&decision=APROBAR\\nRECHAZAR: '+$execution.resumeUrl+'&decision=RECHAZAR'}}",
+        "additionalFields": {
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "2c4a094d-b808-4716-9cc8-53fe071cd22c",
+      "name": "Telegram - Solicitar aprobación",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        0
+      ],
+      "webhookId": "bb46c820-3598-49d0-b1fb-c23106cf0b71",
+      "credentials": {
+        "telegramApi": {
+          "id": "3BS73ibD1CpVPibo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "id": "1af1e6e2-0128-4fcd-9ad5-628a600bee58",
+      "name": "HITL - Esperar decisión",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        0
+      ],
+      "webhookId": "d98c2a5c-3c0f-4fbf-9220-9e3952ea3ca9"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "538b6647-6eea-44ae-92b7-aa4abbb7814a",
+              "leftValue": "={{$json.query.decision}}",
+              "rightValue": "APROBAR",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8e205fbd-9274-4b76-a8d6-0727bb424334",
+      "name": "Router - Aprobado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{$('Gmail - Leer lead').item.json.id}}",
+        "message": "={{$('Groq Free - Clasificar y redactar').item.json.message.content.split('\\\"draft_reply\\\":\\\"')[1].split('\\\",\\\"confidence\\\"')[0].replace(/\\\\n/g,'\\n')}}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9109701c-9c9a-4992-b963-09afc7afc6a6",
+      "name": "Gmail - Responder en hilo",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        0
+      ],
+      "webhookId": "d1671f95-ae35-4680-9f63-4f43ca4bf786",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NtgSOD5wbSf8WxBb",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "app6PrhsqGVfwPsZG"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblbJBZdGILEglTDX",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nodo": "Validación o API",
+            "Mensaje": "={{$json.error?.message || 'Datos incompletos'}}",
+            "Estado": "Nuevo"
+          }
+        },
+        "options": {}
+      },
+      "id": "882ead38-3436-4b27-92ef-2093b7dcc81d",
+      "name": "Error Handler - Registrar",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "pJua5X4aNBdLLGXz",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger Gmail - LEAD_NUEVO": {
+      "main": [
+        [
+          {
+            "node": "Validar Message ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Message ID": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Evitar duplicado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Handler - Registrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Evitar duplicado": {
+      "main": [
+        [
+          {
+            "node": "Filtro - Mensaje nuevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro - Mensaje nuevo": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Leer lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Leer lead": {
+      "main": [
+        [
+          {
+            "node": "Validar datos mínimos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar datos mínimos": {
+      "main": [
+        [
+          {
+            "node": "Groq Free - Clasificar y redactar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Handler - Registrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Free - Clasificar y redactar": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Guardar clasificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Guardar clasificación": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Solicitar aprobación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Solicitar aprobación": {
+      "main": [
+        [
+          {
+            "node": "HITL - Esperar decisión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HITL - Esperar decisión": {
+      "main": [
+        [
+          {
+            "node": "Router - Aprobado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router - Aprobado": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Responder en hilo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Gmail - Responder en hilo": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "76724090-d7cf-4d18-8ed5-bd1a4bbdf071",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3efcf939deb52daddad78cc3b0d515f1bba5b79998447e60a4b85a88b30a9388"
+  },
+  "nodeGroups": [],
+  "id": "Y6wtYJvHtOIPrjad",
+  "tags": []
+}
