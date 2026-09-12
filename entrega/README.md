@@ -25,6 +25,10 @@ Ecosistema autónomo de calificación y seguimiento de leads para AutomatizaPro.
 
 [Abrir Dashboard KPIs - LeadFlow AI en Airtable](https://airtable.com/app6PrhsqGVfwPsZG/shrVqnyBYEfrSVFdb)
 
+## Video Demo
+
+[Ver demostración del flujo en Google Drive](https://drive.google.com/file/d/16QCogZNhmfWv1JO907116svgum0dwNqW/view?usp=sharing)
+
 ## Evidencias
 
 Las capturas reales están disponibles en la carpeta [capturas](capturas/): flujo n8n, configuración Groq, HITL en Telegram, estructura Airtable, corrección del campo Name, ejecución exitosa y camino de error.
